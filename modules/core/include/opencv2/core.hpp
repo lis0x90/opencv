@@ -346,6 +346,9 @@ output array to be changed.
 CV_EXPORTS_W void add(InputArray src1, InputArray src2, OutputArray dst,
                       InputArray mask = noArray(), int dtype = -1);
 
+// --fork
+CV_EXPORTS_W void overlay(InputArray image, InputArray watermark, OutputArray result);
+
 /** @brief Calculates the per-element difference between two arrays or array and a scalar.
 
 The function subtract calculates:

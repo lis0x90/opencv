@@ -2252,6 +2252,61 @@ void cv::add( InputArray src1, InputArray src2, OutputArray dst,
     arithm_op(src1, src2, dst, mask, dtype, getAddTab(), false, 0, OCL_OP_ADD );
 }
 
+#define DEPTH 32
+#define CHANNELS 4
+#define ALPHA_CHANNEL_INDEX 3
+
+static void overlay_op(Mat image, Mat watermark, Mat result)
+{
+	if (
+		image.type() != CV_MAKE_TYPE(DEPTH, CHANNELS) ||
+		watermark.type() != CV_MAKE_TYPE(DEPTH, CHANNELS)
+		)
+		throw
+			std::runtime_error("Wrong type of image");
+
+	if (!(
+		image.cols == watermark.cols &&
+		image.rows == watermark.rows &&
+		image.channels() == watermark.channels()
+		))
+		throw
+			std::runtime_error("Images are different");
+			
+	if (
+		result.empty() ||
+		!(result.cols == image.cols && result.rows == image.rows)
+		)
+		throw
+			std::runtime_error("Invalid result Mat");
+
+	for (int y = 0; y < image.rows; y++)
+	{
+		for (int x = 0; x < image.cols; x++)
+		{
+			auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
+
+			double opacity = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX] / 255.0;
+
+			for (int c = 0; c < image.channels(); ++c)
+			{
+				auto foreground_px = image.data[y * image.step + x * image.channels() + c];
+
+				auto watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+
+				auto result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+
+				result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
+			}
+		}
+	}
+}
+
+void cv::overlay(InputArray image, InputArray watermark, OutputArray result)
+{
+	overlay_op(image.getMat(), watermark.getMat(), result.getMat());
+}
+
 void cv::subtract( InputArray _src1, InputArray _src2, OutputArray _dst,
                InputArray mask, int dtype )
 {
