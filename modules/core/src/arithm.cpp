@@ -2256,7 +2256,7 @@ void cv::add( InputArray src1, InputArray src2, OutputArray dst,
 #define CHANNELS 4
 #define ALPHA_CHANNEL_INDEX 3
 
-static void overlay_op(Mat image, Mat watermark, Mat result)
+static void overlay_op(cv::Mat image, cv::Mat watermark, cv::Mat result)
 {
 	if (
 		image.type() != CV_MAKE_TYPE(DEPTH, CHANNELS) ||
@@ -2286,7 +2286,7 @@ static void overlay_op(Mat image, Mat watermark, Mat result)
 		{
 			auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
 
-			double opacity = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX] / 255.0;
+			double opacity = alpha / 255.0;
 
 			for (int c = 0; c < image.channels(); ++c)
 			{
