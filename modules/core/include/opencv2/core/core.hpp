@@ -2159,6 +2159,9 @@ CV_EXPORTS void insertImageCOI(InputArray coiimg, CvArr* arr, int coi=-1);
 //! adds one matrix to another (dst = src1 + src2)
 CV_EXPORTS_W void add(InputArray src1, InputArray src2, OutputArray dst,
                       InputArray mask=noArray(), int dtype=-1);
+// --fork
+CV_EXPORTS_W void overlay(InputArray image, InputArray watermark, OutputArray result);
+
 //! subtracts one matrix from another (dst = src1 - src2)
 CV_EXPORTS_W void subtract(InputArray src1, InputArray src2, OutputArray dst,
                            InputArray mask=noArray(), int dtype=-1);
