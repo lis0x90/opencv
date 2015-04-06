@@ -1557,7 +1557,46 @@ void cv::add( InputArray src1, InputArray src2, OutputArray dst,
 #define CHANNELS 4
 #define ALPHA_CHANNEL_INDEX 3
 
-static void overlay_op(cv::Mat image, cv::Mat watermark, cv::Mat result)
+namespace {
+
+	struct Overlay : public cv::ParallelLoopBody
+	{
+		Overlay(cv::Mat _image, cv::Mat _watermark)
+			: image(_image)
+			, watermark(_watermark)
+		{ }
+
+		virtual void operator() (const cv::Range& r) const override
+		{
+			auto y = r.start;
+			auto& result = image; // alter the original image
+
+			for (int x = 0; x < image.cols; x++)
+			{
+				auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
+
+				auto opacity = (double) alpha / 255.0;
+
+				for (int c = 0; c < image.channels(); ++c)
+				{
+					auto foreground_px = image.data[y * image.step + x * image.channels() + c];
+
+					auto watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+
+					auto result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+
+					result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
+				}
+			}
+		}
+
+	private:
+		cv::Mat image;
+		cv::Mat watermark;
+	};
+}
+
+static void overlay_op(cv::Mat image, cv::Mat watermark)
 {
 	if (
 		image.type() != CV_MAKE_TYPE(DEPTH, CHANNELS) ||
@@ -1573,39 +1612,13 @@ static void overlay_op(cv::Mat image, cv::Mat watermark, cv::Mat result)
 		))
 		throw
 			std::runtime_error("Images are different");
-			
-	if (
-		result.empty() ||
-		!(result.cols == image.cols && result.rows == image.rows)
-		)
-		throw
-			std::runtime_error("Invalid result Mat");
 
-	for (int y = 0; y < image.rows; y++)
-	{
-		for (int x = 0; x < image.cols; x++)
-		{
-			auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
-
-			double opacity = alpha / 255.0;
-
-			for (int c = 0; c < image.channels(); ++c)
-			{
-				auto foreground_px = image.data[y * image.step + x * image.channels() + c];
-
-				auto watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
-
-				auto result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
-
-				result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
-			}
-		}
-	}
+	cv::parallel_for_(cv::Range(0, image.rows), Overlay(image, watermark));
 }
 
-void cv::overlay(InputArray image, InputArray watermark, OutputArray result)
+void cv::overlay(InputOutputArray image, InputArray watermark)
 {
-	overlay_op(image.getMat(), watermark.getMat(), result.getMat());
+	overlay_op(image.getMatRef(), watermark.getMat());
 }
 
 void cv::subtract( InputArray _src1, InputArray _src2, OutputArray _dst,
