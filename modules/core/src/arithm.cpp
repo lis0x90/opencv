@@ -1568,24 +1568,26 @@ namespace {
 
 		virtual void operator() (const cv::Range& r) const override
 		{
-			auto y = r.start;
 			auto& result = image; // alter the original image
 
-			for (int x = 0; x < image.cols; x++)
+			for (int y = r.start; y < r.end; y++)
 			{
-				auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
-
-				auto opacity = (double) alpha / 255.0;
-
-				for (int c = 0; c < image.channels(); ++c)
+				for (int x = 0; x < image.cols; x++)
 				{
-					auto foreground_px = image.data[y * image.step + x * image.channels() + c];
+					auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
 
-					auto watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+					auto opacity = (double) alpha / 255.0;
 
-					auto result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+					for (int c = 0; c < image.channels(); ++c)
+					{
+						auto foreground_px = image.data[y * image.step + x * image.channels() + c];
 
-					result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
+						auto watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+
+						auto result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+
+						result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
+					}
 				}
 			}
 		}
