@@ -47,6 +47,7 @@
 // */
 
 #include "precomp.hpp"
+#include <stdexcept>
 
 namespace cv
 {
