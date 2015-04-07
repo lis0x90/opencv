@@ -47,7 +47,9 @@
 // */
 
 #include "precomp.hpp"
+
 #include <stdexcept>
+#include <sstream>
 
 namespace cv
 {
@@ -1554,9 +1556,12 @@ void cv::add( InputArray src1, InputArray src2, OutputArray dst,
     arithm_op(src1, src2, dst, mask, dtype, getAddTab() );
 }
 
-#define DEPTH 32
-#define CHANNELS 4
+#define CHANNELS_RGB 3
+#define CHANNELS_ALPHA 4
 #define ALPHA_CHANNEL_INDEX 3
+
+#define TYPE_24 CV_MAKE_TYPE(24, CHANNELS_RGB)
+#define TYPE_32 CV_MAKE_TYPE(32, CHANNELS_ALPHA)
 
 namespace {
 
@@ -1601,20 +1606,28 @@ namespace {
 
 static void overlay_op(cv::Mat image, cv::Mat watermark)
 {
+	if (!(
+		image.type() == TYPE_24 || image.type() == TYPE_32
+		))
+		throw std::runtime_error("Wrong type of background (must be 24 or 32-bit depth)");
+
 	if (
-		image.type() != CV_MAKE_TYPE(DEPTH, CHANNELS) ||
-		watermark.type() != CV_MAKE_TYPE(DEPTH, CHANNELS)
+		watermark.type() != TYPE_32
 		)
 		throw
-			std::runtime_error("Wrong type of image");
+			std::runtime_error("Wrong type of watermark (must be 32-bit depth)");
 
 	if (!(
 		image.cols == watermark.cols &&
-		image.rows == watermark.rows &&
-		image.channels() == watermark.channels()
+		image.rows == watermark.rows
 		))
+	{
+		std::stringstream ss;
+		ss << "Images are different: background " << image.cols << "x" << image.rows << " vs watermark " << watermark.cols << "x" << watermark.rows;
+		
 		throw
-			std::runtime_error("Images are different");
+			std::runtime_error(ss.str());
+	}
 
 	cv::parallel_for_(cv::Range(0, image.rows), Overlay(image, watermark));
 }
