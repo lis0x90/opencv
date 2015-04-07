@@ -1609,7 +1609,8 @@ static void overlay_op(cv::Mat image, cv::Mat watermark)
 	if (!(
 		image.type() == TYPE_24 || image.type() == TYPE_32
 		))
-		throw std::runtime_error("Wrong type of background (must be 24 or 32-bit depth)");
+		throw
+			std::runtime_error("Wrong type of background (must be 24 or 32-bit depth)");
 
 	if (
 		watermark.type() != TYPE_32
