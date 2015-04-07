@@ -1569,23 +1569,23 @@ namespace {
 
 		virtual void operator() (const cv::Range& r) const override
 		{
-			auto& result = image; // alter the original image
+			const cv::Mat& result = image; // alter the original image
 
 			for (int y = r.start; y < r.end; y++)
 			{
 				for (int x = 0; x < image.cols; x++)
 				{
-					auto alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
+					uchar alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
 
-					auto opacity = (double) alpha / 255.0;
+					double opacity = (double) alpha / 255.0;
 
 					for (int c = 0; c < image.channels(); ++c)
 					{
-						auto foreground_px = image.data[y * image.step + x * image.channels() + c];
+						uchar foreground_px = image.data[y * image.step + x * image.channels() + c];
 
-						auto watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+						uchar watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
 
-						auto result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+						double result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
 
 						result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
 					}
