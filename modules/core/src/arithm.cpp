@@ -1567,18 +1567,20 @@ namespace {
 
 	struct Overlay : public cv::ParallelLoopBody
 	{
-		Overlay(cv::Mat _image, cv::Mat _watermark)
+		Overlay(cv::Mat _image, cv::Mat _watermark, const cv::Rect& _rect)
 			: image(_image)
 			, watermark(_watermark)
+			, rect(_rect)
 		{ }
 
 		virtual void operator() (const cv::Range& r) const override
 		{
 			const cv::Mat& result = image; // alter the original image
+			const int endX = rect.x + rect.width;
 
 			for (int y = r.start; y < r.end; y++)
 			{
-				for (int x = 0; x < image.cols; x++)
+				for (int x = rect.x; x < endX; x++)
 				{
 					uchar alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
 
@@ -1601,10 +1603,11 @@ namespace {
 	private:
 		cv::Mat image;
 		cv::Mat watermark;
+		cv::Rect rect;
 	};
 }
 
-static void overlay_op(cv::Mat image, cv::Mat watermark)
+static void overlay_op(cv::Mat image, cv::Mat watermark, int x, int y)
 {
 	if (!(
 		image.type() == TYPE_24 || image.type() == TYPE_32
@@ -1618,24 +1621,25 @@ static void overlay_op(cv::Mat image, cv::Mat watermark)
 		throw
 			std::runtime_error("Wrong type of watermark (must be 32-bit depth)");
 
-	if (!(
-		image.cols == watermark.cols &&
-		image.rows == watermark.rows
-		))
-	{
-		std::stringstream ss;
-		ss << "Images are different: background " << image.cols << "x" << image.rows << " vs watermark " << watermark.cols << "x" << watermark.rows;
-		
-		throw
-			std::runtime_error(ss.str());
-	}
+	// watermark rect + offset
+	cv::Rect wm(0, 0, watermark.cols, watermark.rows);
+	wm.x += x;
+	wm.y += y;
 
-	cv::parallel_for_(cv::Range(0, image.rows), Overlay(image, watermark));
+	// get the result rect
+	cv::Rect rc(0, 0, image.cols, image.rows);
+	rc &= wm;
+
+	if (rc.area() == 0)
+		throw
+			std::runtime_error("The final rect is empty");
+
+	cv::parallel_for_(cv::Range(rc.y, rc.y + rc.height), Overlay(image, watermark, rc));
 }
 
-void cv::overlay(InputOutputArray image, InputArray watermark)
+void cv::overlay(InputOutputArray image, InputArray watermark, int x, int y)
 {
-	overlay_op(image.getMatRef(), watermark.getMat());
+	overlay_op(image.getMatRef(), watermark.getMat(), x, y);
 }
 
 void cv::subtract( InputArray _src1, InputArray _src2, OutputArray _dst,
