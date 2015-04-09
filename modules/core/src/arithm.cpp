@@ -1574,7 +1574,7 @@ namespace {
 			, offset(cv::Point(x, y))
 		{ }
 
-		virtual void operator() (const cv::Range& r) const override
+		virtual void operator() (const cv::Range& r) const
 		{
 			const cv::Mat& result = image; // alter the original image
 			const int endX = rect.x + rect.width;
