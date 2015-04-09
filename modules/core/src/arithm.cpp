@@ -1567,10 +1567,11 @@ namespace {
 
 	struct Overlay : public cv::ParallelLoopBody
 	{
-		Overlay(cv::Mat _image, cv::Mat _watermark, const cv::Rect& _rect)
+		Overlay(cv::Mat _image, cv::Mat _watermark, const cv::Rect& _rect, int x, int y)
 			: image(_image)
 			, watermark(_watermark)
 			, rect(_rect)
+			, offset(cv::Point(x, y))
 		{ }
 
 		virtual void operator() (const cv::Range& r) const override
@@ -1582,7 +1583,7 @@ namespace {
 			{
 				for (int x = rect.x; x < endX; x++)
 				{
-					uchar alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
+					uchar alpha = watermark.data[(y - offset.y) * watermark.step + (x - offset.x) * watermark.channels() + ALPHA_CHANNEL_INDEX];
 
 					double opacity = (double) alpha / 255.0;
 
@@ -1590,7 +1591,7 @@ namespace {
 					{
 						uchar foreground_px = image.data[y * image.step + x * image.channels() + c];
 
-						uchar watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+						uchar watermark_px = watermark.data[(y - offset.y) * watermark.step + (x - offset.x) * watermark.channels() + c];
 
 						double result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
 
@@ -1604,6 +1605,7 @@ namespace {
 		cv::Mat image;
 		cv::Mat watermark;
 		cv::Rect rect;
+		cv::Point offset; // watermark offset
 	};
 }
 
@@ -1634,7 +1636,7 @@ static void overlay_op(cv::Mat image, cv::Mat watermark, int x, int y)
 		throw
 			std::runtime_error("The final rect is empty");
 
-	cv::parallel_for_(cv::Range(rc.y, rc.y + rc.height), Overlay(image, watermark, rc));
+	cv::parallel_for_(cv::Range(rc.y, rc.y + rc.height), Overlay(image, watermark, rc, x, y));
 }
 
 void cv::overlay(InputOutputArray image, InputArray watermark, int x, int y)
