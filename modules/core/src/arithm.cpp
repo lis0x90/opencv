@@ -1583,19 +1583,23 @@ namespace {
 			{
 				for (int x = rect.x; x < endX; x++)
 				{
-					uchar alpha = watermark.data[(y - offset.y) * watermark.step + (x - offset.x) * watermark.channels() + ALPHA_CHANNEL_INDEX];
+					size_t wm_index = (y - offset.y) * watermark.step + (x - offset.x) * watermark.channels();
+					
+					size_t image_index = y * image.step + x * image.channels();
+
+					uchar alpha = watermark.data[wm_index + ALPHA_CHANNEL_INDEX];
 
 					double opacity = (double) alpha / 255.0;
 
 					for (int c = 0; c < image.channels(); ++c)
 					{
-						uchar foreground_px = image.data[y * image.step + x * image.channels() + c];
+						uchar foreground_px = image.data[image_index + c];
 
-						uchar watermark_px = watermark.data[(y - offset.y) * watermark.step + (x - offset.x) * watermark.channels() + c];
+						uchar watermark_px = watermark.data[wm_index + c];
 
 						double result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
 
-						result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
+						result.data[image_index + c] = cv::saturate_cast<uchar>(result_px);
 					}
 				}
 			}
