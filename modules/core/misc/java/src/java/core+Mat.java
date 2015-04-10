@@ -1,8 +1,14 @@
 package org.opencv.core;
 
+import java.io.PrintStream;
+import java.util.Arrays;
+
 // C++: class Mat
 //javadoc: Mat
 public class Mat {
+public static final String JAVA_PROP_CLOSE_LEAK_DETECT = "ru.kamis.closeLeakDetect";
+public static final Boolean closeLeakDetect = Boolean.valueOf(Boolean.parseBoolean(System.getProperty("ru.kamis.closeLeakDetect")));
+private StackTraceElement[] lastCallStackTrace = null;
 
     public final long nativeObj;
 
@@ -20,7 +26,7 @@ public class Mat {
     // javadoc: Mat::Mat()
     public Mat()
     {
-
+	leakDetectInit();
         nativeObj = n_Mat();
 
         return;
@@ -33,7 +39,7 @@ public class Mat {
     // javadoc: Mat::Mat(rows, cols, type)
     public Mat(int rows, int cols, int type)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(rows, cols, type);
 
         return;
@@ -46,7 +52,7 @@ public class Mat {
     // javadoc: Mat::Mat(size, type)
     public Mat(Size size, int type)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(size.width, size.height, type);
 
         return;
@@ -59,7 +65,7 @@ public class Mat {
     // javadoc: Mat::Mat(rows, cols, type, s)
     public Mat(int rows, int cols, int type, Scalar s)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(rows, cols, type, s.val[0], s.val[1], s.val[2], s.val[3]);
 
         return;
@@ -72,7 +78,7 @@ public class Mat {
     // javadoc: Mat::Mat(size, type, s)
     public Mat(Size size, int type, Scalar s)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(size.width, size.height, type, s.val[0], s.val[1], s.val[2], s.val[3]);
 
         return;
@@ -85,7 +91,7 @@ public class Mat {
     // javadoc: Mat::Mat(m, rowRange, colRange)
     public Mat(Mat m, Range rowRange, Range colRange)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(m.nativeObj, rowRange.start, rowRange.end, colRange.start, colRange.end);
 
         return;
@@ -94,7 +100,7 @@ public class Mat {
     // javadoc: Mat::Mat(m, rowRange)
     public Mat(Mat m, Range rowRange)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(m.nativeObj, rowRange.start, rowRange.end);
 
         return;
@@ -107,11 +113,30 @@ public class Mat {
     // javadoc: Mat::Mat(m, roi)
     public Mat(Mat m, Rect roi)
     {
-
+	leakDetectInit();
         nativeObj = n_Mat(m.nativeObj, roi.y, roi.y + roi.height, roi.x, roi.x + roi.width);
 
         return;
     }
+
+	protected void leakDetectInit() {
+		if (closeLeakDetect.booleanValue()) {
+			StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+			this.lastCallStackTrace = ((StackTraceElement[])Arrays.copyOfRange(stackTrace, 1, stackTrace.length));
+		}
+	}
+   
+	protected static String format(StackTraceElement[] stackTrace) {
+		if (stackTrace == null) {
+			return "Stacktrace capture is TURNED OFF. To enable stack trace capturing add java command line parameter: -Dru.kamis.closeLeakDetect=true";
+		}
+ 
+		StringBuffer buf = new StringBuffer();
+		for (int i = 1; i < stackTrace.length; i++) {
+			buf.append("\tat ").append(stackTrace[i].toString()).append("\n");
+		}
+		return buf.toString();
+	}
 
     //
     // C++: Mat Mat::adjustROI(int dtop, int dbottom, int dleft, int dright)
@@ -640,6 +665,8 @@ public class Mat {
     {
 
         n_release(nativeObj);
+	
+	this.lastCallStackTrace = null;
 
         return;
     }
@@ -908,6 +935,10 @@ public class Mat {
 
     @Override
     protected void finalize() throws Throwable {
+	if (this.lastCallStackTrace != null) {
+		System.err.println("Detected unclosed Mat. Last call stack trace: \n" + format(this.lastCallStackTrace));
+	}
+
         n_delete(nativeObj);
         super.finalize();
     }
