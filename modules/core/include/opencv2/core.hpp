@@ -399,6 +399,10 @@ of the output array to be changed.
 CV_EXPORTS_W void subtract(InputArray src1, InputArray src2, OutputArray dst,
                            InputArray mask = noArray(), int dtype = -1);
 
+/** @brief Make overlay image with watermark.
+		This is the fork of 3.2.0 branch for Kamis
+*/
+CV_EXPORTS_W void overlay(InputArray image, InputArray watermark, OutputArray result);
 
 /** @brief Calculates the per-element scaled product of two arrays.
 
