@@ -401,8 +401,12 @@ CV_EXPORTS_W void subtract(InputArray src1, InputArray src2, OutputArray dst,
 
 /** @brief Make overlay image with watermark.
 		This is the fork of 3.2.0 branch for Kamis
+	@param image source image, will be modified
+	@param watermark watermark pattern, must be the same size
+	@param x watermark offset X	(might be negative)
+	@param y watermark offset Y (might be negative)
 */
-CV_EXPORTS_W void overlay(InputArray image, InputArray watermark, OutputArray result);
+CV_EXPORTS_W void overlay(InputOutputArray image, InputArray watermark, int x, int y);
 
 /** @brief Calculates the per-element scaled product of two arrays.
 

@@ -995,59 +995,102 @@ void cv::absdiff( InputArray src1, InputArray src2, OutputArray dst )
     arithm_op(src1, src2, dst, noArray(), -1, getAbsDiffTab(), false, 0, OCL_OP_ABSDIFF);
 }
 
-#define DEPTH 32
-#define CHANNELS 4
+#define CHANNELS_RGB 3
+#define CHANNELS_ALPHA 4
 #define ALPHA_CHANNEL_INDEX 3
 
-static void overlay_op(cv::Mat image, cv::Mat watermark, cv::Mat result)
-{
-	if (
-		image.type() != CV_MAKE_TYPE(DEPTH, CHANNELS) ||
-		watermark.type() != CV_MAKE_TYPE(DEPTH, CHANNELS)
-		)
-		throw
-			std::runtime_error("Wrong type of image");
+#define TYPE_24 CV_MAKE_TYPE(24, CHANNELS_RGB)
+#define TYPE_32 CV_MAKE_TYPE(32, CHANNELS_ALPHA)
 
-	if (!(
-		image.cols == watermark.cols &&
-		image.rows == watermark.rows &&
-		image.channels() == watermark.channels()
-		))
-		throw
-			std::runtime_error("Images are different");
-			
-	if (
-		result.empty() ||
-		!(result.cols == image.cols && result.rows == image.rows)
-		)
-		throw
-			std::runtime_error("Invalid result Mat");
+namespace {
 
-	for (int y = 0; y < image.rows; y++)
+	/// <summary>A functor for parallel loop</summary>
+	struct Overlay : public cv::ParallelLoopBody
 	{
-		for (int x = 0; x < image.cols; x++)
+		Overlay(cv::Mat _image, cv::Mat _watermark, const cv::Rect& _rect, int x, int y)
+			: image(_image)
+			, watermark(_watermark)
+			, rect(_rect)
+			, offset(cv::Point(x, y))
+		{ }
+
+		virtual void operator() (const cv::Range& r) const
 		{
-			uchar alpha = watermark.data[y * watermark.step + x * watermark.channels() + ALPHA_CHANNEL_INDEX];
+			const cv::Mat& result = image; // alter the original image
+			const int endX = rect.x + rect.width;
 
-			double opacity = alpha / 255.0;
-
-			for (int c = 0; c < image.channels(); ++c)
+			for (int y = r.start; y < r.end; y++)
 			{
-				uchar foreground_px = image.data[y * image.step + x * image.channels() + c];
+				for (int x = rect.x; x < endX; x++)
+				{
+					// get next pixel index from the watermark
+					size_t wm_index = (y - offset.y) * watermark.step + (x - offset.x) * watermark.channels();
+					
+					// get next pixel index from the image
+					size_t image_index = y * image.step + x * image.channels();
 
-				uchar watermark_px = watermark.data[y * watermark.step + x * watermark.channels() + c];
+					uchar alpha = watermark.data[wm_index + ALPHA_CHANNEL_INDEX];
 
-				double result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+					double opacity = (double) alpha / 255.0;
 
-				result.data[y * image.step + image.channels() * x + c] = cv::saturate_cast<uchar>(result_px);
+					// do the color mixing on all channels
+					// each pixel contains the RGB color channels + alpha channel
+
+					for (int c = 0; c < image.channels(); ++c)
+					{
+						uchar foreground_px = image.data[image_index + c];
+
+						uchar watermark_px = watermark.data[wm_index + c];
+
+						double result_px = foreground_px * (1.0 - opacity) + watermark_px * opacity;
+
+						result.data[image_index + c] = cv::saturate_cast<uchar>(result_px);
+					}
+				}
 			}
 		}
-	}
+
+	private:
+		cv::Mat image;
+		cv::Mat watermark;
+		cv::Rect rect;
+		cv::Point offset; // watermark offset
+	};
 }
 
-void cv::overlay(InputArray image, InputArray watermark, OutputArray result)
+static void overlay_op(cv::Mat image, cv::Mat watermark, int x, int y)
 {
-	overlay_op(image.getMat(), watermark.getMat(), result.getMat());
+	if (!(
+		image.type() == TYPE_24 || image.type() == TYPE_32
+		))
+		throw
+			std::runtime_error("Wrong type of background (must be 24 or 32-bit depth)");
+
+	if (
+		watermark.type() != TYPE_32
+		)
+		throw
+			std::runtime_error("Wrong type of watermark (must be 32-bit depth)");
+
+	// watermark rect + offset
+	cv::Rect wm(0, 0, watermark.cols, watermark.rows);
+	wm.x += x;
+	wm.y += y;
+
+	// get the result rect
+	cv::Rect rc(0, 0, image.cols, image.rows);
+	rc &= wm;
+
+	if (rc.area() == 0)
+		throw
+			std::runtime_error("The final rect is empty");
+
+	cv::parallel_for_(cv::Range(rc.y, rc.y + rc.height), Overlay(image, watermark, rc, x, y));
+}
+
+void cv::overlay(InputOutputArray image, InputArray watermark, int x, int y)
+{
+	overlay_op(image.getMatRef(), watermark.getMat(), x, y);
 }
 
 /****************************************************************************************\
