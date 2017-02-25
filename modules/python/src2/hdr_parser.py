@@ -542,8 +542,8 @@ class CppHeaderParser(object):
                         mat = "UMat" if use_umat else "Mat"
 
                         # TODO: Vectors should contain UMat, but this is not very easy to support and not very needed
-                        vector_mat = "vector_{}".format("Mat")
-                        vector_mat_template = "vector<{}>".format("Mat")
+                        vector_mat = "vector_%s" % "Mat"
+                        vector_mat_template = "vector<%s>" % "Mat"
 
                         if arg_type == "InputArray":
                             arg_type = mat
@@ -852,7 +852,7 @@ class CppHeaderParser(object):
                                 # If function takes as one of arguments Mat or vector<Mat> - we want to create the
                                 # same declaration working with UMat (this is important for T-Api access)
                                 args = decl[3]
-                                has_mat = len(list(filter(lambda x: x[0] in {"Mat", "vector_Mat"}, args))) > 0
+                                has_mat = len(list(filter(lambda x: x[0] in ["Mat", "vector_Mat"], args))) > 0
                                 if has_mat:
                                     _, _, _, umat_decl = self.parse_stmt(stmt, token, use_umat=True)
                                     decls.append(umat_decl)
