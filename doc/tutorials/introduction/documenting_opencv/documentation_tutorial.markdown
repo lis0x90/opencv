@@ -32,17 +32,21 @@ Generate documentation {#tutorial_documentation_generate}
 -   Create build directory near the sources folder(s) and go into it
 -   Run cmake (assuming you put sources to _opencv_ folder):
     @code{.sh}
-    cmake ../opencv
+    cmake -DBUILD_DOCS=ON ../opencv
     @endcode
     Or if you get contrib sources too:
     @code{.sh}
-    cmake -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules ../opencv
+    cmake -DBUILD_DOCS=ON -DOPENCV_EXTRA_MODULES_PATH=../opencv_contrib/modules ../opencv
     @endcode
 -   Run make:
     @code{.sh}
     make doxygen
     @endcode
 -   Open <i>doc/doxygen/html/index.html</i> file in your favorite browser
+-   Test your Python code:
+    @code{.sh}
+    make check_pylint
+    @endcode
 
 Quick start {#tutorial_documentation_quick_start}
 ===========
@@ -600,7 +604,8 @@ Document the function {#tutorial_documentation_steps_fun}
 6. _Optional_: describe return value of the function using the _returns_ command.
 7. _Optional_: add "See also" section with links to similar functions or classes
 8. _Optional_: add bibliographic reference if any.
-9. Generate doxygen documentation and verify results.
+9. Test your code. (Python: "make check_pylint")
+10. Generate doxygen documentation and verify results.
 
 Write the tutorial {#tutorial_documentation_steps_tutorial}
 ------------------
@@ -679,12 +684,12 @@ References {#tutorial_documentation_refs}
 - [Command reference] - supported commands and their parameters
 
 <!-- invisible references list -->
-[Doxygen]: http://www.stack.nl/~dimitri/doxygen/index.html)
-[Doxygen download]: http://www.stack.nl/~dimitri/doxygen/download.html
-[Doxygen installation]: http://www.stack.nl/~dimitri/doxygen/manual/install.html
-[Documenting basics]: http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html
-[Markdown support]: http://www.stack.nl/~dimitri/doxygen/manual/markdown.html
-[Formulas support]: http://www.stack.nl/~dimitri/doxygen/manual/formulas.html
+[Doxygen]: http://www.doxygen.nl
+[Doxygen download]: http://doxygen.nl/download.html
+[Doxygen installation]: http://doxygen.nl/manual/install.html
+[Documenting basics]: http://www.doxygen.nl/manual/docblocks.html
+[Markdown support]: http://www.doxygen.nl/manual/markdown.html
+[Formulas support]: http://www.doxygen.nl/manual/formulas.html
 [Supported formula commands]: http://docs.mathjax.org/en/latest/tex.html#supported-latex-commands
-[Command reference]: http://www.stack.nl/~dimitri/doxygen/manual/commands.html
+[Command reference]: http://www.doxygen.nl/manual/commands.html
 [Google Scholar]: http://scholar.google.ru/

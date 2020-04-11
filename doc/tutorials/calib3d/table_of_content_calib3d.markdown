@@ -1,8 +1,15 @@
 Camera calibration and 3D reconstruction (calib3d module) {#tutorial_table_of_content_calib3d}
 ==========================================================
 
-Although we got most of our images in a 2D format they do come from a 3D world. Here you will learn
-how to find out from the 2D images information about the 3D world.
+Although we get most of our images in a 2D format they do come from a 3D world. Here you will learn how to find out 3D world information from 2D images.
+
+-   @subpage tutorial_camera_calibration_pattern
+
+    *Compatibility:* \> OpenCV 2.0
+
+    *Author:* Laurent Berger
+
+    You will learn how to create some calibration pattern.
 
 -   @subpage tutorial_camera_calibration_square_chess
 
@@ -14,7 +21,7 @@ how to find out from the 2D images information about the 3D world.
 
 -   @subpage tutorial_camera_calibration
 
-    *Compatibility:* \> OpenCV 2.0
+    *Compatibility:* \> OpenCV 4.0
 
     *Author:* Bernát Gábor
 
@@ -38,6 +45,6 @@ how to find out from the 2D images information about the 3D world.
     *Author:* Vladislav Sovrasov
 
     Camera calibration by using either the chessboard, chAruco, asymmetrical circle or dual asymmetrical circle
-    pattern. Calibration process is continious, so you can see results after each new pattern shot.
+    pattern. Calibration process is continuous, so you can see results after each new pattern shot.
     As an output you get average reprojection error, intrinsic camera parameters, distortion coefficients and
      confidence intervals for all of evaluated variables.
