@@ -16,7 +16,7 @@ namespace cv
 {
     namespace
     {
-        struct Overlay : public ParallelLoopBody
+        struct Overlay CV_FINAL : public ParallelLoopBody
         {
             Overlay(Mat _image, Mat _watermark, const Rect& _rect, int x, int y)
                 : image(_image)
@@ -25,9 +25,9 @@ namespace cv
                 , offset(Point(x, y))
             { }
 
-            virtual void operator() (const Range& r) const
+            void operator() (const Range& r) const CV_OVERRIDE
             {
-                const Mat& result = image; // alter the original image
+                auto& result = image; // alter the original image
                 const int endX = rect.x + rect.width;
 
                 for (int y = r.start; y < r.end; y++)
@@ -57,10 +57,10 @@ namespace cv
             }
 
         private:
-            Mat image;
-            Mat watermark;
-            Rect rect;
-            Point offset; // watermark offset
+            Mat image; //!< original image
+            Mat watermark; //!< watermark image
+            Rect rect; //<! result image rect
+            Point offset; //!< watermark offset
         };
     }
 
@@ -69,33 +69,40 @@ namespace cv
         if (!(
             image.type() == TYPE_24 || image.type() == TYPE_32
             ))
+        {
             throw
-            std::runtime_error("Wrong type of background (must be 24 or 32-bit depth)");
+                std::runtime_error("Wrong type of background (must be 24 or 32-bit depth)");
+        }
 
         if (
             watermark.type() != TYPE_32
             )
+        {
             throw
-            std::runtime_error("Wrong type of watermark (must be 32-bit depth)");
+                std::runtime_error("Wrong type of watermark (must be 32-bit depth)");
+        }
 
         // watermark rect + offset
-        Rect wm(0, 0, watermark.cols, watermark.rows);
+        Rect wm { 0, 0, watermark.cols, watermark.rows };
         wm.x += x;
         wm.y += y;
 
-        // get the result rect
-        Rect rc(0, 0, image.cols, image.rows);
+        // get the result image rect
+        Rect rc { 0, 0, image.cols, image.rows };
         rc &= wm;
 
-        if (rc.area() == 0)
+        if (rc.empty())
+        {
             throw
-            std::runtime_error("The final rect is empty");
+                std::runtime_error("The final image rect is empty");
+        }
 
-        parallel_for_(Range(rc.y, rc.y + rc.height), Overlay(image, watermark, rc, x, y));
+        parallel_for_(Range { rc.y, rc.y + rc.height }, Overlay { image, watermark, rc, x, y });
     }
 
     void overlay(InputOutputArray image, InputArray watermark, int x, int y)
     {
+        CV_INSTRUMENT_REGION();
         overlay_op(image.getMatRef(), watermark.getMat(), x, y);
     }
 }
