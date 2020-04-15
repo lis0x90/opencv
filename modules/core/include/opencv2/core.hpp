@@ -58,7 +58,6 @@
 #include "opencv2/core/types.hpp"
 #include "opencv2/core/mat.hpp"
 #include "opencv2/core/persistence.hpp"
-#include "opencv2/core/overlay.hpp"
 
 /**
 @defgroup core Core functionality
@@ -2324,6 +2323,17 @@ instead.
 @sa RNG, sort
 */
 CV_EXPORTS_W void randShuffle(InputOutputArray dst, double iterFactor = 1., RNG* rng = 0);
+
+/** @brief The function makes the overlay over image.
+
+The function cv::overlay makes the overlay over image.
+Note: To be seen from Java environment, the declaration of function must be placed in core.hpp file!
+@param image the input image
+@param watermark the watermark image
+@param x X-axis watermark offset
+@param y Y-axis watermark offset
+*/
+CV_EXPORTS_W void overlay(InputOutputArray image, InputArray watermark, int x, int y);
 
 /** @brief Principal Component Analysis
 
