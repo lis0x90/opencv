@@ -480,7 +480,11 @@ bool  TiffDecoder::readData( Mat& img )
             const uint64_t MAX_TILE_SIZE = (CV_BIG_UINT(1) << 30);
             CV_CheckLE((int)ncn, 4, "");
             CV_CheckLE((int)bpp, 64, "");
+#if 0
+			// for 64-bit compilation that assert is not actual
+			// --mac
             CV_Assert(((uint64_t)tile_width0 * tile_height0 * ncn * std::max(1, (int)(bpp / bitsPerByte)) < MAX_TILE_SIZE) && "TIFF tile size is too large: >= 1Gb");
+#endif
 
             if (dst_bpp == 8)
             {
